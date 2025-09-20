@@ -1,0 +1,6 @@
+@ViaSignal_HostAddress = http://localhost:5110
+
+GET {{ViaSignal_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
