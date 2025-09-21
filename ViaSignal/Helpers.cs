@@ -8,53 +8,48 @@ public static class Helpers
     {
         var basePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "via", "voices");
 
-        var voiceFiles = new Dictionary<string, string>
+        var state = voiceData switch
         {
-            { nameof(voiceData.Machine), Path.Combine(basePath, "ViaMachin.mp3") },
-            { nameof(voiceData.Problem), Path.Combine(basePath, "ViaProblem.mp3") },
-            { nameof(voiceData.Brand), Path.Combine(basePath, "ViaBrand.mp3") },
-            { nameof(voiceData.City), Path.Combine(basePath, "ViaCity.mp3") },
-            { nameof(voiceData.Province), Path.Combine(basePath, "ViaPrv.mp3") },
-            { nameof(voiceData.Address), Path.Combine(basePath, "ViaAddress.mp3") }
+            _ when string.IsNullOrWhiteSpace(voiceData.Machine) => VoiceState.WaitingForMachine,
+            _ when string.IsNullOrWhiteSpace(voiceData.Problem) => VoiceState.WaitingForProblem,
+            _ when string.IsNullOrWhiteSpace(voiceData.Brand) => VoiceState.WaitingForBrand,
+            _ when string.IsNullOrWhiteSpace(voiceData.City) => VoiceState.WaitingForCity,
+            _ when string.IsNullOrWhiteSpace(voiceData.Province) => VoiceState.WaitingForProvince,
+            _ when string.IsNullOrWhiteSpace(voiceData.Address) => VoiceState.WaitingForAddress,
+            _ => VoiceState.Completed
         };
 
-        bool allNullOrEmpty = true;
-        string firstEmptyFieldFile = null;
-
-        foreach (var kvp in voiceFiles)
+        // فایل صوتی متناظر با State
+        var fileName = state switch
         {
-            var prop = voiceData.GetType().GetProperty(kvp.Key);
-            var value = prop?.GetValue(voiceData) as string;
+            VoiceState.WaitingForMachine => "ViaMachin.mp3",
+            VoiceState.WaitingForProblem => "ViaProblem.mp3",
+            VoiceState.WaitingForBrand => "ViaBrand.mp3",
+            VoiceState.WaitingForCity => "ViaCity.mp3",
+            VoiceState.WaitingForProvince => "ViaPrv.mp3",
+            VoiceState.WaitingForAddress => "ViaAddress.mp3",
+            VoiceState.Completed => "ViaFinal.mp3",
+            _ => "ViaNotValid.mp3"
+        };
 
-            if (!string.IsNullOrEmpty(value))
-            {
-                allNullOrEmpty = false;
-                continue;
-            }
+        var filePath = Path.Combine(basePath, fileName);
 
-            // ذخیره اولین فایل مربوط به فیلد خالی
-            if (firstEmptyFieldFile == null && File.Exists(kvp.Value))
-                firstEmptyFieldFile = kvp.Value;
-        }
+        // اگر فایل موجود نبود → فایل fallback
+        if (!File.Exists(filePath))
+            filePath = Path.Combine(basePath, "ViaNotValid.mp3");
 
-        if (allNullOrEmpty)
-        {
-            var errorFile = Path.Combine(basePath, "ViaNotValid.mp3");
-            if (File.Exists(errorFile))
-                return await File.ReadAllBytesAsync(errorFile);
-        }
-
-        if (firstEmptyFieldFile != null)
-            return await File.ReadAllBytesAsync(firstEmptyFieldFile);
-
-        // همه پر بودن → فایل موفقیت
-        var successFile = Path.Combine(basePath, "ViaFinal.mp3");
-        if (File.Exists(successFile))
-            return await File.ReadAllBytesAsync(successFile);
-
-        // اگر هیچ فایلی پیدا نشد
-        var fallbackFile = Path.Combine(basePath, "ViaNotValid.mp3");
-        return await File.ReadAllBytesAsync(fallbackFile);
+        return await File.ReadAllBytesAsync(filePath);
+    }
+    private enum VoiceState
+    {
+        WaitingForMachine,
+        WaitingForProblem,
+        WaitingForBrand,
+        WaitingForCity,
+        WaitingForProvince,
+        WaitingForAddress,
+        Completed,
+        Invalid
     }
 
 }
