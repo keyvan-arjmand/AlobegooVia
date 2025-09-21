@@ -27,7 +27,7 @@ public static class SocketService
                     CancellationToken.None);
                 break;
             }
-            
+
             ms.Write(buffer, 0, result.Count);
             if (!result.EndOfMessage) continue;
             var audioBytes = ms.ToArray();
@@ -57,6 +57,7 @@ public static class SocketService
             responseFill.EnsureSuccessStatusCode();
 
             var responseText = await responseFill.Content.ReadAsStringAsync();
+
             if (string.IsNullOrWhiteSpace(responseText))
             {
                 Console.WriteLine("❌ Empty response from API");
