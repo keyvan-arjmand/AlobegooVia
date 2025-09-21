@@ -33,6 +33,7 @@ app.Map("/ws", async context =>
     Console.WriteLine($"🆔 Created new session: {sessionId}");
 
     var sessionBytes = Encoding.UTF8.GetBytes(sessionId);
+
     await webSocket.SendAsync(new ArraySegment<byte>(sessionBytes), WebSocketMessageType.Text, true,
         CancellationToken.None);
 

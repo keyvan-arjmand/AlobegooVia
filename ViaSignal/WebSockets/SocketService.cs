@@ -27,7 +27,7 @@ public static class SocketService
                     CancellationToken.None);
                 break;
             }
-
+            
             ms.Write(buffer, 0, result.Count);
             if (!result.EndOfMessage) continue;
             var audioBytes = ms.ToArray();
@@ -112,5 +112,4 @@ public static class SocketService
             Console.WriteLine($"❌ Error in ProcessAudioMessage: {ex.Message}");
         }
     }
-    
 }

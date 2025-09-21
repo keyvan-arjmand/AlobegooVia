@@ -8,16 +8,31 @@ public static class Helpers
     {
         var basePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "via", "voices");
 
-        var state = voiceData switch
+        VoiceState state;
+
+        // بررسی همه خالی بودن
+        if (string.IsNullOrWhiteSpace(voiceData.Machine) &&
+            string.IsNullOrWhiteSpace(voiceData.Problem) &&
+            string.IsNullOrWhiteSpace(voiceData.Brand) &&
+            string.IsNullOrWhiteSpace(voiceData.City) &&
+            string.IsNullOrWhiteSpace(voiceData.Province) &&
+            string.IsNullOrWhiteSpace(voiceData.Address))
         {
-            _ when string.IsNullOrWhiteSpace(voiceData.Machine) => VoiceState.WaitingForMachine,
-            _ when string.IsNullOrWhiteSpace(voiceData.Problem) => VoiceState.WaitingForProblem,
-            _ when string.IsNullOrWhiteSpace(voiceData.Brand) => VoiceState.WaitingForBrand,
-            _ when string.IsNullOrWhiteSpace(voiceData.City) => VoiceState.WaitingForCity,
-            _ when string.IsNullOrWhiteSpace(voiceData.Province) => VoiceState.WaitingForProvince,
-            _ when string.IsNullOrWhiteSpace(voiceData.Address) => VoiceState.WaitingForAddress,
-            _ => VoiceState.Completed
-        };
+            state = VoiceState.Invalid; // همه خالی
+        }
+        else
+        {
+            state = voiceData switch
+            {
+                _ when string.IsNullOrWhiteSpace(voiceData.Machine) => VoiceState.WaitingForMachine,
+                _ when string.IsNullOrWhiteSpace(voiceData.Problem) => VoiceState.WaitingForProblem,
+                _ when string.IsNullOrWhiteSpace(voiceData.Brand) => VoiceState.WaitingForBrand,
+                _ when string.IsNullOrWhiteSpace(voiceData.City) => VoiceState.WaitingForCity,
+                _ when string.IsNullOrWhiteSpace(voiceData.Province) => VoiceState.WaitingForProvince,
+                _ when string.IsNullOrWhiteSpace(voiceData.Address) => VoiceState.WaitingForAddress,
+                _ => VoiceState.Completed
+            };
+        }
 
         // فایل صوتی متناظر با State
         var fileName = state switch
@@ -29,17 +44,19 @@ public static class Helpers
             VoiceState.WaitingForProvince => "ViaPrv.mp3",
             VoiceState.WaitingForAddress => "ViaAddress.mp3",
             VoiceState.Completed => "ViaFinal.mp3",
+            VoiceState.Invalid => "ViaNotValid.mp3",
             _ => "ViaNotValid.mp3"
         };
 
         var filePath = Path.Combine(basePath, fileName);
 
-        // اگر فایل موجود نبود → فایل fallback
+        // اگر فایل موجود نبود → fallback
         if (!File.Exists(filePath))
             filePath = Path.Combine(basePath, "ViaNotValid.mp3");
 
         return await File.ReadAllBytesAsync(filePath);
     }
+
     private enum VoiceState
     {
         WaitingForMachine,
@@ -51,5 +68,4 @@ public static class Helpers
         Completed,
         Invalid
     }
-
 }
