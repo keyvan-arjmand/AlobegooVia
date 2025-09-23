@@ -1,5 +1,6 @@
 ﻿using System.Net.Http.Headers;
 using System.Net.WebSockets;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ViaSignal.Dtos;
@@ -9,7 +10,6 @@ namespace ViaSignal.WebSockets;
 public static class SocketService
 {
     private const string submitUrl = "https://api.alobegoo.com/ai-noauth/azinllm/voice/submit/175909";
-
     private const string apiUrlFill = "https://api.alobegoo.com/ai-noauth/azinllm/voice/fill";
 
     public static async Task HandleAudio(this WebSocket webSocket, VoiceData voiceData)
@@ -64,11 +64,10 @@ public static class SocketService
                 return;
             }
 
-            var options = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true, // نادیده گرفتن تفاوت حروف بزرگ و کوچک
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull // نادیده گرفتن پراپرتی‌های null
-            };
+            var options = new JsonSerializerOptions();
+            options.PropertyNameCaseInsensitive = true; // نادیده گرفتن تفاوت حروف بزرگ و کوچک
+            options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+            // نادیده گرفتن پراپرتی‌های null,
 
             var newVoiceData = JsonSerializer.Deserialize<VoiceData>(responseText, options);
             if (newVoiceData == null)
