@@ -103,12 +103,12 @@ public static class SocketService
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(voiceData.Machine) &&
-                string.IsNullOrWhiteSpace(voiceData.Problem) &&
-                string.IsNullOrWhiteSpace(voiceData.Brand) &&
-                string.IsNullOrWhiteSpace(voiceData.City) &&
-                string.IsNullOrWhiteSpace(voiceData.Province) &&
-                string.IsNullOrWhiteSpace(voiceData.Address))
+            if (!string.IsNullOrWhiteSpace(voiceData.Machine) &&
+                !string.IsNullOrWhiteSpace(voiceData.Problem) &&
+                !string.IsNullOrWhiteSpace(voiceData.Brand) &&
+                !string.IsNullOrWhiteSpace(voiceData.City) &&
+                !string.IsNullOrWhiteSpace(voiceData.Province) &&
+                !string.IsNullOrWhiteSpace(voiceData.Address))
             {
                 var response = await client.PostAsJsonAsync(submitUrl, voiceData);
             }
