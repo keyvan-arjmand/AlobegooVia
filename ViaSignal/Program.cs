@@ -6,10 +6,21 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using ViaSignal;
 using ViaSignal.Dtos;
+using ViaSignal.ElevenLabs;
 using ViaSignal.WebSockets;
 
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
+var client = new ElevenLabsClient();
+
+// حالت ساده HTTP
+await client.GenerateAsync(
+    voiceId: "JBFqnCBsd6RMkjVDRZzb",
+    text:
+    "سَلام، بِه اَلُوبِگو خوش اَومَدین!  \nشُما داریـن با دَستیارِ صُوتیِ ما صُحبَت می‌کنین.  \nجَهتِ ثَبتِ دَرخوَاستِ تَعمیرات، لُطفاً مَدلِ دَستگاه، مُشکِل، بَرَند، اُستان و شَهر، و آدرِسِ کامِل رو بگین.  \nمَمنون.\n",
+    outputFile: "output_http.mp3"
+);
+
 
 app.UseWebSockets();
 

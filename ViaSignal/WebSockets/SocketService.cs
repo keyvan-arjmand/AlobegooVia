@@ -87,9 +87,11 @@ public static class SocketService
             voiceData.Problem = string.IsNullOrWhiteSpace(voiceData.Problem) ? newVoiceData.Problem : voiceData.Problem;
             voiceData.Brand = string.IsNullOrWhiteSpace(voiceData.Brand) ? newVoiceData.Brand : voiceData.Brand;
             voiceData.City = string.IsNullOrWhiteSpace(voiceData.City) ? newVoiceData.City : voiceData.City;
+            
             voiceData.Province = string.IsNullOrWhiteSpace(voiceData.Province)
                 ? newVoiceData.Province
                 : voiceData.Province;
+            
             voiceData.Address = string.IsNullOrWhiteSpace(voiceData.Address) ? newVoiceData.Address : voiceData.Address;
 
             Console.WriteLine($"📋 Updated VoiceData: {JsonSerializer.Serialize(voiceData)}");
@@ -101,10 +103,19 @@ public static class SocketService
                 return;
             }
 
-            var response = await client.PostAsJsonAsync(submitUrl, voiceData);
+            if (string.IsNullOrWhiteSpace(voiceData.Machine) &&
+                string.IsNullOrWhiteSpace(voiceData.Problem) &&
+                string.IsNullOrWhiteSpace(voiceData.Brand) &&
+                string.IsNullOrWhiteSpace(voiceData.City) &&
+                string.IsNullOrWhiteSpace(voiceData.Province) &&
+                string.IsNullOrWhiteSpace(voiceData.Address))
+            {
+                var response = await client.PostAsJsonAsync(submitUrl, voiceData);
+            }
 
             await webSocket.SendAsync(new ArraySegment<byte>(validVoice), WebSocketMessageType.Binary, true,
                 CancellationToken.None);
+            
             Console.WriteLine($"✅ Session updated & sent {validVoice.Length} bytes to client");
         }
         catch (Exception ex)
