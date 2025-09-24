@@ -17,7 +17,7 @@ var client = new ElevenLabsClient();
 await client.GenerateAsync(
     voiceId: "JBFqnCBsd6RMkjVDRZzb",
     text:
-    "سَلام، بِه اَلُوبِگو خوش اَومَدین!  \nشُما داریـن با دَستیارِ صُوتیِ ما صُحبَت می‌کنین.  \nجَهتِ ثَبتِ دَرخوَاستِ تَعمیرات، لُطفاً مَدلِ دَستگاه، مُشکِل، بَرَند، اُستان و شَهر، و آدرِسِ کامِل رو بگین.  \nمَمنون.\n",
+    "n",
     outputFile: "output_http.mp3"
 );
 
