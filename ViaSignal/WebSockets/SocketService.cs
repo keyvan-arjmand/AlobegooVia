@@ -4,6 +4,9 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ViaSignal.Dtos;
+using ViaSignal.ViaServices.ElevenLabs;
+using ViaSignal.ViaServices.MetisAi;
+using ViaSignal.ViaServices.SpeechToText;
 
 namespace ViaSignal.WebSockets;
 
@@ -46,62 +49,57 @@ public static class SocketService
         {
             Console.WriteLine($"🎧 Processing audio for session: {voiceData.SessionId} ({audioBytes.Length} bytes)");
 
-            using var client = new HttpClient();
-            client.Timeout = TimeSpan.FromSeconds(30);
-            using var content = new MultipartFormDataContent();
-            var fileContent = new ByteArrayContent(audioBytes);
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue("audio/wav");
-            content.Add(fileContent, "file", "audio.wav");
+            var elevenClient = new ElevenLabsClient();
 
-            var responseFill = await client.PostAsync(apiUrlFill, content);
-            responseFill.EnsureSuccessStatusCode();
 
-            var responseText = await responseFill.Content.ReadAsStringAsync();
+            string text = await elevenClient.SpeechToTextAsync(audioBytes);
 
-            if (string.IsNullOrWhiteSpace(responseText))
-            {
-                Console.WriteLine("❌ Empty response from API");
-                return;
-            }
+            var ai = new MetisAiClient();
+            var result = await ai.SendMessageAsync(
+                text: text
+            );
 
-            var options = new JsonSerializerOptions();
-            options.PropertyNameCaseInsensitive = true; // نادیده گرفتن تفاوت حروف بزرگ و کوچک
-            options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-            // نادیده گرفتن پراپرتی‌های null,
+            result.Machine ??= "";
+            result.Problem ??= "";
+            result.Brand ??= "";
+            result.City ??= "";
+            result.Province ??= "";
+            result.Address ??= "";
+            result.PhoneNumber ??= "";
+            result.Target ??= "";
+            result.ToneOfVoice ??= "";
+            result.Text ??= "";
+            result.Response ??= "";
 
-            var newVoiceData = JsonSerializer.Deserialize<VoiceData>(responseText, options);
-            if (newVoiceData == null)
-            {
-                Console.WriteLine("❌ Failed to deserialize API response");
-                return;
-            }
-
-            newVoiceData.Machine ??= "";
-            newVoiceData.Problem ??= "";
-            newVoiceData.Brand ??= "";
-            newVoiceData.City ??= "";
-            newVoiceData.Province ??= "";
-            newVoiceData.Address ??= "";
-
-            voiceData.Machine = string.IsNullOrWhiteSpace(voiceData.Machine) ? newVoiceData.Machine : voiceData.Machine;
-            voiceData.Problem = string.IsNullOrWhiteSpace(voiceData.Problem) ? newVoiceData.Problem : voiceData.Problem;
-            voiceData.Brand = string.IsNullOrWhiteSpace(voiceData.Brand) ? newVoiceData.Brand : voiceData.Brand;
-            voiceData.City = string.IsNullOrWhiteSpace(voiceData.City) ? newVoiceData.City : voiceData.City;
-            
+            voiceData.PhoneNumber = string.IsNullOrWhiteSpace(voiceData.PhoneNumber)
+                ? result.PhoneNumber
+                : voiceData.PhoneNumber;
+            voiceData.Target = string.IsNullOrWhiteSpace(voiceData.Target) ? result.Target : voiceData.Target;
+            voiceData.ToneOfVoice = string.IsNullOrWhiteSpace(voiceData.ToneOfVoice)
+                ? result.ToneOfVoice
+                : voiceData.ToneOfVoice;
+            voiceData.Text = string.IsNullOrWhiteSpace(voiceData.Text) ? result.Text : voiceData.Text;
+            voiceData.Response = string.IsNullOrWhiteSpace(voiceData.Response) ? result.Response : voiceData.Response;
+            voiceData.Machine = string.IsNullOrWhiteSpace(voiceData.Machine) ? result.Machine : voiceData.Machine;
+            voiceData.Problem = string.IsNullOrWhiteSpace(voiceData.Problem) ? result.Problem : voiceData.Problem;
+            voiceData.Brand = string.IsNullOrWhiteSpace(voiceData.Brand) ? result.Brand : voiceData.Brand;
+            voiceData.City = string.IsNullOrWhiteSpace(voiceData.City) ? result.City : voiceData.City;
             voiceData.Province = string.IsNullOrWhiteSpace(voiceData.Province)
-                ? newVoiceData.Province
+                ? result.Province
                 : voiceData.Province;
-            
-            voiceData.Address = string.IsNullOrWhiteSpace(voiceData.Address) ? newVoiceData.Address : voiceData.Address;
+            voiceData.Address = string.IsNullOrWhiteSpace(voiceData.Address) ? result.Address : voiceData.Address;
 
             Console.WriteLine($"📋 Updated VoiceData: {JsonSerializer.Serialize(voiceData)}");
 
-            var validVoice = await voiceData.ValidateVoiceData();
-            if (validVoice == null || validVoice.Length == 0)
-            {
-                Console.WriteLine("❌ Validation failed or empty validVoice");
-                return;
-            }
+
+            await elevenClient.GenerateAsync(
+                voiceId: "cgSgspJ2msm6clMCkdW9",
+                text: voiceData.Response,
+                outputFile: "output_http.mp3"
+            );
+            byte[] audioBytes1 =
+                await System.IO.File.ReadAllBytesAsync(
+                    @"C:\Users\Tanin\RiderProjects\ViaSignal\ViaSignal\output_http.mp3");
 
             if (!string.IsNullOrWhiteSpace(voiceData.Machine) &&
                 !string.IsNullOrWhiteSpace(voiceData.Problem) &&
@@ -110,13 +108,14 @@ public static class SocketService
                 !string.IsNullOrWhiteSpace(voiceData.Province) &&
                 !string.IsNullOrWhiteSpace(voiceData.Address))
             {
-                var response = await client.PostAsJsonAsync(submitUrl, voiceData);
+                var client1 = new HttpClient();
+                var response = await client1.PostAsJsonAsync(submitUrl, voiceData);
             }
 
-            await webSocket.SendAsync(new ArraySegment<byte>(validVoice), WebSocketMessageType.Binary, true,
+            await webSocket.SendAsync(new ArraySegment<byte>(audioBytes1), WebSocketMessageType.Binary, true,
                 CancellationToken.None);
-            
-            Console.WriteLine($"✅ Session updated & sent {validVoice.Length} bytes to client");
+
+            Console.WriteLine($"✅ Session updated & sent {audioBytes1.Length} bytes to client");
         }
         catch (Exception ex)
         {

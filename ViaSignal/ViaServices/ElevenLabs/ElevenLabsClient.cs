@@ -1,8 +1,9 @@
-﻿using System.Net.WebSockets;
+﻿using System.Net.Http.Headers;
+using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 
-namespace ViaSignal.ElevenLabs;
+namespace ViaSignal.ViaServices.ElevenLabs;
 
 public class ElevenLabsClient
 {
@@ -17,6 +18,7 @@ public class ElevenLabsClient
     }
 
 
+    // 🗣️ Text to Speech
     public async Task GenerateAsync(string voiceId, string text, string outputFile, string modelId = "eleven_v3",
         string format = "mp3_44100_128")
     {
@@ -41,9 +43,7 @@ public class ElevenLabsClient
         Console.WriteLine($"[OK] Audio saved to {outputFile}");
     }
 
-    /// <summary>
-    /// استریم متن به گفتار (WebSocket)
-    /// </summary>
+    // 🎧 Streaming TTS (WebSocket)
     public async Task StreamAsync(string voiceId, string text, string outputFile, string modelId = "eleven_v3",
         string format = "mp3_44100_128", CancellationToken ct = default)
     {
@@ -54,11 +54,9 @@ public class ElevenLabsClient
 
         await ws.ConnectAsync(uri, ct);
 
-        // init message
         var initMsg = new { text = "" };
         await SendJson(ws, initMsg, ct);
 
-        // publish message
         var publishMsg = new { text = text, try_trigger_generation = true };
         await SendJson(ws, publishMsg, ct);
 
@@ -104,4 +102,37 @@ public class ElevenLabsClient
         var bytes = Encoding.UTF8.GetBytes(json);
         await ws.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, ct);
     }
+
+    // 🧠 Speech-To-Text
+    public async Task<string> SpeechToTextAsync(byte[] audioData, string languageCode = "fas", bool diarize = true, bool tagAudioEvents = true)
+    {
+        if (audioData == null || audioData.Length == 0)
+            throw new ArgumentException("Audio data cannot be null or empty.", nameof(audioData));
+
+        using var form = new MultipartFormDataContent();
+
+        var fileContent = new ByteArrayContent(audioData);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("audio/mpeg");
+
+        form.Add(fileContent, "file", "audio.mp3"); // اسم فایل برای API مهمه
+        form.Add(new StringContent("scribe_v1"), "model_id");
+        form.Add(new StringContent(languageCode ?? ""), "language_code");
+        form.Add(new StringContent(diarize.ToString().ToLower()), "diarize");
+        form.Add(new StringContent(tagAudioEvents.ToString().ToLower()), "tag_audio_events");
+
+        var response = await _http.PostAsync("/v1/speech-to-text", form);
+        var responseText = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+            throw new Exception($"SpeechToText failed: {response.StatusCode}\n{responseText}");
+
+        using var doc = JsonDocument.Parse(responseText);
+        if (doc.RootElement.TryGetProperty("text", out var textElement))
+            return textElement.GetString() ?? "";
+
+        return responseText;
+    }
+
+    
+    
 }
