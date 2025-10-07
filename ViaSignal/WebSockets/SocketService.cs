@@ -55,8 +55,9 @@ public static class SocketService
             string text = await elevenClient.SpeechToTextAsync(audioBytes);
 
             var ai = new MetisAiClient();
+            voiceData.Text = text;
             var result = await ai.SendMessageAsync(
-                text: text
+                text: JsonSerializer.Serialize(voiceData)
             );
 
             result.Machine ??= "";

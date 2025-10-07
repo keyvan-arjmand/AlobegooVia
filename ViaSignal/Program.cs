@@ -27,10 +27,10 @@ var elevenClient = new ElevenLabsClient();
 //     "سلام چطوری",
 //     outputFile: "output_http.mp3"
 // );
-byte[] audioBytes = System.IO.File.ReadAllBytes(@"C:\Voip\09116583118.wav");
-
-var a = await elevenClient.SpeechToTextAsync(audioBytes);
-Console.WriteLine(a);
+// byte[] audioBytes = System.IO.File.ReadAllBytes(@"C:\Voip\09116583118.wav");
+//
+// var a = await elevenClient.SpeechToTextAsync(audioBytes);
+// Console.WriteLine(a);
 // var ai = new MetisAiClient();
 // var result = await ai.SendMessageAsync(
 //     text: "سلام، چطوری چخبر چیکارا میکنی! "
